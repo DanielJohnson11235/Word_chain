@@ -1,0 +1,398 @@
+/* ------------------------------------------------------------------
+   Tokens
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg: #e9eef3;          /* cool paper */
+  --surface: #ffffff;     /* tiles */
+  --ink: #1b2333;         /* text and tile letters */
+  --muted: #5d6779;
+  --rail: #b7c2d0;        /* the ladder's side rails */
+  --line: #cbd3de;
+  --change: #2f5fe0;      /* the letter you changed */
+  --change-soft: #dfe7fc;
+  --target: #e3a62f;      /* the goal word */
+  --target-soft: #fbefd6;
+  --error: #b93a26;
+
+  --tile: 56px;
+  --gap: 8px;
+  --radius-tile: 10px;
+  --radius-btn: 999px;
+
+  --font: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131926;
+    --surface: #1e2738;
+    --ink: #e7ebf2;
+    --muted: #9aa5b8;
+    --rail: #3a4760;
+    --line: #2f3a50;
+    --change: #7f9dff;
+    --change-soft: #23305a;
+    --target: #f0b84a;
+    --target-soft: #3a2f17;
+    --error: #ff8a73;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #131926;
+  --surface: #1e2738;
+  --ink: #e7ebf2;
+  --muted: #9aa5b8;
+  --rail: #3a4760;
+  --line: #2f3a50;
+  --change: #7f9dff;
+  --change-soft: #23305a;
+  --target: #f0b84a;
+  --target-soft: #3a2f17;
+  --error: #ff8a73;
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* make the hidden attribute win over display: flex and friends */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--change);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Header
+   ------------------------------------------------------------------ */
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 800;
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+}
+
+select {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  padding: 7px 12px;
+}
+
+.goal {
+  margin: 14px 0 22px;
+  color: var(--muted);
+}
+
+.goal strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------
+   The ladder: words are the rungs, two rails run down the sides
+   ------------------------------------------------------------------ */
+
+.ladder {
+  --row: calc(var(--tile) * 4 + var(--gap) * 3);
+  position: relative;
+  list-style: none;
+  margin: 0 auto;
+  padding: 6px 22px;
+  width: calc(var(--row) + 44px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ladder::before,
+.ladder::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: 3px;
+  background: var(--rail);
+}
+.ladder::before { left: 4px; }
+.ladder::after  { right: 4px; }
+
+.rung {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, var(--tile));
+  gap: var(--gap);
+}
+
+/* the crossbar each word sits on */
+.rung::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  right: -18px;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  background: var(--rail);
+  z-index: 0;
+}
+
+.tile {
+  position: relative;
+  z-index: 1;
+  width: var(--tile);
+  height: var(--tile);
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-tile);
+  font-size: 28px;
+  font-weight: 700;
+  font-variation-settings: "opsz" 48;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* the letter that changed on this step */
+.tile.changed {
+  background: var(--change-soft);
+  border-color: var(--change);
+  color: var(--change);
+}
+
+/* the most recent word gets a heavier outline */
+.rung.current .tile { border-color: var(--ink); }
+.rung.current .tile.changed { border-color: var(--change); }
+
+/* letters already in the right spot for the target, on every rung */
+.rung .tile.matched {
+  background: var(--target);
+  border-color: var(--target);
+  color: #1b2333;
+}
+/* a letter that is both new on this step and correct: gold with a blue outline */
+.rung .tile.matched.changed {
+  border-color: var(--change);
+  box-shadow: inset 0 0 0 2px var(--change);
+}
+
+/* target word at the bottom */
+.rung.target .tile {
+  background: var(--target-soft);
+  border-color: var(--target);
+}
+
+/* moves left before you go over par */
+.rung.slot .tile {
+  background: var(--bg);
+  border-style: dashed;
+}
+
+/* the rung you type into */
+.rung.entry .tile {
+  border-color: var(--change);
+  border-style: dashed;
+  color: var(--change);
+}
+.rung.entry .tile.filled { border-style: solid; }
+.rung.entry .tile.cursor { box-shadow: inset 0 -4px 0 var(--change); }
+
+.entry-input {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  font-size: 16px; /* stops iOS from zooming in */
+  border: 0;
+  padding: 0;
+  cursor: text;
+}
+
+.rung.entry:focus-within .tile { border-width: 3px; }
+
+.rung.entry.shake { animation: shake 0.32s ease-in-out; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(7px); }
+  75% { transform: translateX(-4px); }
+}
+
+/* a new rung settles in when you make a move */
+.rung.fresh .tile { animation: drop 0.22s ease-out; }
+
+@keyframes drop {
+  from { transform: translateY(-10px); opacity: 0.2; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.rung.target.reached .tile {
+  background: var(--target);
+  border-color: var(--target);
+  color: #1b2333;
+}
+/* the final letter that landed you on the target */
+.rung.target.reached .tile.changed {
+  border-color: var(--change);
+  box-shadow: inset 0 0 0 2px var(--change);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rung.entry.shake,
+  .rung.fresh .tile { animation: none; }
+}
+
+/* ------------------------------------------------------------------
+   Messages, buttons, results
+   ------------------------------------------------------------------ */
+
+.message {
+  min-height: 1.5em;
+  margin: 18px 0 10px;
+  text-align: center;
+  font-weight: 600;
+}
+.message.error { color: var(--error); }
+.message.hint  { color: var(--change); }
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-btn);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--ink); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+.btn-quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+.result {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.result-title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 800;
+  font-variation-settings: "opsz" 72;
+}
+
+.result-detail {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.result .btn { margin-top: 18px; }
+
+.result-solution {
+  margin: 10px 0 0;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.result-solution:empty { display: none; }
+
+.how {
+  margin-top: 36px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.how summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+}
+.how p { margin: 8px 0 0; }
+
+/* ------------------------------------------------------------------
+   Small screens
+   ------------------------------------------------------------------ */
+
+@media (max-width: 380px) {
+  :root { --tile: 48px; --gap: 6px; }
+  .tile { font-size: 24px; }
+  .title { font-size: 26px; }
+}
